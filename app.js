@@ -412,8 +412,11 @@
         // 2. Magnitude filter
         list = list.filter(eq => eq.mag >= state.minMagnitude);
 
-        // 3. Text search filter
-        if (state.searchQuery.length > 0) {
+        // 3. Geographic / Text search filter
+        if (state.selectedCountryFeature) {
+            // Mathematically precise geometric containment filter
+            list = list.filter(eq => d3.geoContains(state.selectedCountryFeature, [eq.lon, eq.lat]));
+        } else if (state.searchQuery.length > 0) {
             const q = state.searchQuery.toLowerCase();
             list = list.filter(eq => (eq.place || '').toLowerCase().includes(q));
         }
@@ -656,6 +659,8 @@
 
         dom.searchInput.addEventListener('input', debounce(() => {
             state.searchQuery = dom.searchInput.value.trim();
+            state.selectedCountryFeature = null; // Typing overrides country click
+            if (state.globe && state.searchQuery.length > 0) state.globe.selectCountry(null);
             dom.searchClear.style.display = state.searchQuery.length ? 'block' : 'none';
             applyFilters();
         }, 250));
@@ -663,7 +668,9 @@
         dom.searchClear.addEventListener('click', () => {
             dom.searchInput.value = '';
             state.searchQuery = '';
+            state.selectedCountryFeature = null;
             dom.searchClear.style.display = 'none';
+            if (state.globe) state.globe.selectCountry(null);
             applyFilters();
         });
 
@@ -694,11 +701,13 @@
         window.addEventListener('countrySelected', (e) => {
             const feature = e.detail;
             if (feature?.properties?.name) {
+                state.selectedCountryFeature = feature;
                 dom.searchInput.value = feature.properties.name;
                 state.searchQuery = feature.properties.name.toLowerCase();
                 dom.searchClear.style.display = 'block';
                 applyFilters();
             } else {
+                state.selectedCountryFeature = null;
                 // Clicked empty ocean: clear country filter and forget selected earthquake
                 if (state.searchQuery.length > 0) {
                     dom.searchInput.value = '';
