@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEISMIC MONITOR — Live Global Earthquake Visualizer & Interactive Dot Globe</title>
+    
+    <!-- SEO Optimization -->
+    <meta name="description" content="Immersive, real-time global earthquake tracking dashboard featuring a responsive 3D orthographic dot globe. Filter, explore, and analyze live seismic activity.">
+    <meta name="keywords" content="earthquake map, live seismic tracker, USGS API, interactive 3D globe, D3.js visualization, real-time geodata">
+    <meta name="author" content="Antigravity Specialist">
+    
+    <!-- Google Fonts: Outfit (Display) & Plus Jakarta Sans (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Core External Visualization Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-seismic-theme">
+
+    <!-- Starry Space Background Effect -->
+    <div id="space-stars"></div>
+    <div id="radial-atmosphere"></div>
+
+    <!-- Main Viewport Layout -->
+    <div class="dashboard-container">
+        
+        <!-- Header Section -->
+        <header class="dashboard-header glass-element" id="main-header">
+            <div class="header-logo-group">
+                <div class="pulse-ring-logo">
+                    <div class="logo-inner-dot"></div>
+                </div>
+                <h1 class="header-title">SEISMIC<span class="highlight">WAVE</span></h1>
+            </div>
+            
+            <div class="global-stats-row">
+                <div class="header-stat-card">
+                    <span class="stat-label">DATA SOURCES</span>
+                    <span class="stat-value" id="source-count">0 active</span>
+                </div>
+                <div class="header-stat-card">
+                    <span class="stat-label">LIVE FEED STATUS</span>
+                    <span class="stat-value"><span class="live-indicator-dot pulsating"></span>CONNECTED</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Workspace Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Sidebar: Analytics & Controls -->
+            <section class="sidebar-left glass-element" aria-labelledby="controls-heading">
+                <h2 id="controls-heading" class="sr-only">Filters and Analytics</h2>
+                
+                <!-- Timeframe Selection -->
+                <div class="control-group">
+                    <label class="group-label">TIMEFRAME</label>
+                    <div class="time-tabs" id="timeframe-selector">
+                        <button class="tab-btn" data-timeframe="hour" id="btn-hour">1 Hour</button>
+                        <button class="tab-btn active" data-timeframe="day" id="btn-day">24 Hours</button>
+                        <button class="tab-btn" data-timeframe="week" id="btn-week">7 Days</button>
+                        <button class="tab-btn" data-timeframe="month" id="btn-month">30 Days</button>
+                        <button class="tab-btn" data-timeframe="custom" id="btn-custom">Custom</button>
+                    </div>
+                    <div id="custom-date-filter" class="hide" style="margin-top: 10px; display: flex; gap: 8px;">
+                        <input type="date" id="date-start" class="search-input" style="padding: 6px 10px; flex: 1;">
+                        <input type="date" id="date-end" class="search-input" style="padding: 6px 10px; flex: 1;">
+                    </div>
+                </div>
+
+                <!-- Magnitude Filter -->
+                <div class="control-group">
+                    <div class="slider-header">
+                        <label class="group-label">MINIMUM MAGNITUDE</label>
+                        <span class="slider-value" id="mag-display">2.5 M</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" min="1.0" max="8.0" step="0.1" value="2.5" class="custom-slider" id="mag-slider">
+                        <div class="slider-scale">
+                            <span>1.0</span>
+                            <span>4.0</span>
+                            <span>6.0</span>
+                            <span>8.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Country Quick Search -->
+                <div class="control-group">
+                    <label class="group-label" for="country-search">SEARCH BY COUNTRY</label>
+                    <div class="search-wrapper">
+                        <input type="text" id="country-search" class="search-input" placeholder="Type country name... (e.g. Turkey, Japan)">
+                        <button class="search-clear-btn" id="search-clear" aria-label="Clear Search">&times;</button>
+                    </div>
+                </div>
+
+                <!-- Active Data Sources Indicator -->
+                <div class="control-group">
+                    <label class="group-label">DATA SOURCES</label>
+                    <div class="sources-list" id="sources-list">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- Aggregate Statistics Panel -->
+                <div class="statistics-panel">
+                    <h3 class="panel-subtitle">SEISMIC STATS</h3>
+                    <div class="stats-grid">
+                        <div class="metric-card glass-sub">
+                            <span class="metric-label">TOTAL EVENTS</span>
+                            <span class="metric-value counter" id="stat-total">0</span>
+                        </div>
+                        <div class="metric-card glass-sub">
+                            <span class="metric-label">MAX MAGNITUDE</span>
+                            <span class="metric-value highlight-red counter" id="stat-max">0.0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Magnitude Distribution Chart Overlay -->
+                    <div class="chart-container glass-sub">
+                        <div class="chart-header">
+                            <span class="chart-title">MAGNITUDE FREQUENCY</span>
+                        </div>
+                        <div class="bar-chart" id="magnitude-chart">
+                            <!-- Bars rendered dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center Stage: The Orthographic Dot Globe -->
+            <section class="stage-center" aria-label="Interactive 3D Globe Visualizer">
+                
+                <!-- Scientific HUD Compass Overlay -->
+                <div class="hud-circle-container">
+                    <div class="hud-outer-compass"></div>
+                    <div class="hud-bearing-labels">
+                        <span class="label-n">N 000°</span>
+                        <span class="label-e">E 090°</span>
+                        <span class="label-s">S 180°</span>
+                        <span class="label-w">W 270°</span>
+                    </div>
+                </div>
+                
+                <!-- The Globe Canvas -->
+                <div class="canvas-wrapper">
+                    <canvas id="globe-canvas" width="600" height="600"></canvas>
+                </div>
+                
+                <!-- Globe Controls and Tooltip Overlay -->
+                <div class="globe-overlay-hud">
+                    <div class="globe-tooltip glass-element hide" id="globe-tooltip">
+                        Hover a country...
+                    </div>
+                    
+                    <!-- Sound Toggle & Auto-Rotation Switch -->
+                    <div class="floating-hud-controls glass-element">
+                        <button class="hud-control-btn active" id="btn-rotate" title="Toggle Auto-Rotation">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <span>SPIN</span>
+                        </button>
+                        <button class="hud-control-btn" id="btn-sound" title="Toggle Seismic Chimes">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" id="sound-icon-off"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" id="sound-icon-on" class="hide"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                            <span>AUDIO</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: Live Timeline Feed -->
+            <section class="sidebar-right glass-element" aria-labelledby="feed-heading">
+                <div class="feed-header">
+                    <h2 id="feed-heading" class="feed-title">REAL-TIME TIMELINE</h2>
+                    <span class="feed-sub" id="feed-subtitle">USGS Live Polling</span>
+                </div>
+                
+                <!-- Chronological Live List Container -->
+                <div class="feed-scroll-container" id="earthquake-list" role="log" aria-live="polite">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Syncing live seismic database...</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <!-- Glassmorphic Details Card Modal (Slide-up drawer) -->
+        <section class="event-details-drawer glass-element hide" id="details-drawer" aria-hidden="true">
+            <button class="drawer-close-btn" id="details-close" aria-label="Close details panel">&times;</button>
+            <div class="drawer-layout">
+                <div class="drawer-main-info">
+                    <div class="drawer-badge" id="detail-mag-badge">5.8</div>
+                    <div class="drawer-meta">
+                        <h3 class="detail-title" id="detail-place">15km SSE of Tokyo, Japan</h3>
+                        <span class="detail-time" id="detail-time">May 29, 2026 at 23:00 (Local Time)</span>
+                    </div>
+                </div>
+                <div class="drawer-stats-row">
+                    <div class="drawer-stat">
+                        <span class="d-label">DEPTH</span>
+                        <span class="d-value highlight-orange" id="detail-depth">10.0 km</span>
+                    </div>
+                    <div class="drawer-stat">
+                        <span class="d-label">COORDINATES</span>
+                        <span class="d-value" id="detail-coords">35.676° N, 139.650° E</span>
+                    </div>
+                    <div class="drawer-stat">
+                        <span class="d-label">TSUNAMI WARNING</span>
+                        <span class="d-value" id="detail-tsunami">None</span>
+                    </div>
+                    <div class="drawer-action-col">
+                        <button class="focus-btn" id="btn-focus-map">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                            PIVOT GLOBE
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- Script Entry Points -->
+    <script src="globe.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
