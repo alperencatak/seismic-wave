@@ -63,36 +63,3 @@ When implementing click-to-center transitions on an auto-rotating globe, long-ru
 ### 🛑 Interrupting Active Animations Safely
 Selecting a new earthquake while the globe is still transitioning to a previous target often causes canvas flickering or thread locking.
 * **The Fix**: The engine leverages D3's transition lifecycle, executing `d3.select(canvas).interrupt()` before starting any new coordinate transition. This safely halts existing interpolations on the canvas without triggering browser type-errors.
-
----
-
-## 🚀 Running the Project Locally
-
-Because the application is built entirely on native web standards and client-side logic, running it is incredibly simple.
-
-### Option A: The Double-Click Way
-1. Clone this repository or download the source code files.
-2. Double-click the `index.html` file to open it in your browser. 
-*(Note: Because of browser security sandbox restrictions on loading local JSON files, loading the country maps may require a local server. If the globe doesn't render land masses immediately, use Option B).*
-
-### Option B: The Dev Server Way (Recommended)
-Running a local development server ensures smooth file loading and allows all APIs to execute properly:
-* **With VS Code**: Install the **Live Server** extension, right-click `index.html`, and select *Open with Live Server*.
-* **With Python**: Open your terminal in the directory and run:
-  ```bash
-  python -m http.server 8000
-  ```
-  Then open [http://localhost:8000](http://localhost:8000) in your browser.
-* **With Node.js / npm**: Run:
-  ```bash
-  npx serve .
-  ```
-  Then open the provided port in your browser.
-
----
-
-## 🤝 Crafted by Hand
-
-This application is the product of passionate, iterative design. From micro-interactions and custom CSS-only sliders to precision geospatial boundary calculations, every pixel and line of code was crafted to showcase the beautiful intersection of science, art, and modern front-end technology.
-
-Feel free to explore, clone, modify, and listen to the pulse of the Earth! 🌍✨
